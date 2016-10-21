@@ -82,8 +82,8 @@ case $1 in
 
 # Firewall como router
 	#Clientes DNS desde la DMZ a la WAN
-	iptables -A FORWARD -i $DMZ_IF -s $DMZ_NET -o $WAN_IF -p tcp --dport 53 -j ACCEPT
-	iptables -t nat -A POSTROUTING -s $DMZ_NET -o $WAN_IF -p tcp --dport 53 -j SNAT --to $WAN_IP
+	iptables -A FORWARD -i $DMZ_IF -s $DMZ_NET -o $WAN_IF -p udp --dport 53 -j ACCEPT
+	iptables -t nat -A POSTROUTING -s $DMZ_NET -o $WAN_IF -p udp --dport 53 -j SNAT --to $WAN_IP
 
 	# Salida a Repositorios de Servidores de la DMZ (7)
 	iptables -A FORWARD -i $DMZ_IF -s $DMZ_NET -o $WAN_IF -p tcp --dport 80 -j ACCEPT
@@ -119,7 +119,7 @@ case $1 in
 #	iptables -A FORWARD -i $LAN_IF -s $LAN_NET -o $DMZ_IF -d $DMZ_NET -p icmp -j ACCEPT
 #	iptables -A FORWARD -i $DMZ_IF -s $DMZ_NET -o $LAN_IF -d $LAN_IF -p icmp -j ACCEPT
 	iptables -A FORWARD -p icmp -j ACCEPT
-	iptables -t nat -A POSTROUTING -o $WAN_IF -p tcp --dport 80 -j SNAT --to $WAN_IP
+	iptables -t nat -A POSTROUTING -o $WAN_IF -p icmp  -j SNAT --to $WAN_IP
 
 
 	# Se permiten el FORWARD de todas las respuestas a peticiones hechas
