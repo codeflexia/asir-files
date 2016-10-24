@@ -24,7 +24,7 @@ test_git(){
 
 list_files(){
 	REPO_DIR="$1"
-	find $REPO_DIR -type f -printf %P\n
+	find $REPO_DIR -type f -printf "%P\n"
 }
 
 do_status(){
