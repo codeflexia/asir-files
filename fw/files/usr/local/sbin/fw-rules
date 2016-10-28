@@ -6,16 +6,16 @@ if [ $# -ne 1 ]; then
 fi
 
 # VARS
-DMZ_NET="172.20.100.0/24"
-LAN_NET="192.168.100.0/24"
+DMZ_NET="172.20.106.0/24"
+LAN_NET="192.168.106.0/24"
 
-DMZ_IF="ens3"
-WAN_IF="ens9"
-LAN_IF="ens10"
+WAN_IF="ens3"
+DMZ_IF="ens8"
+LAN_IF="ens9"
 
-DMZ_IP="172.20.100.254"
-WAN_IP="10.3.4.153"
-LAN_IP="192.168.100.254"
+DMZ_IP="172.20.106.254"
+WAN_IP="10.3.4.80"
+LAN_IP="192.168.106.254"
 
 CFG_FILE="/etc/default/fw-rules"
 
@@ -36,7 +36,7 @@ case $1 in
 	
 	# Default policies
 	iptables -P INPUT DROP
-	iptables -P OUTPUT DROP
+	iptables -P OUTPUT DROP 
 	iptables -P FORWARD DROP
 
 # servicios en el FireWall
@@ -51,34 +51,35 @@ case $1 in
 # FireWall como cliente
 	# cliente DHCP
 	iptables -A OUTPUT -o $WAN_IF -p udp --dport 67 --sport 68 -j ACCEPT
-	iptables -A INPUT -i $WAN_IF -p udp --sport 67 --dport 68 -m state --state ESTABLISHED,RELATED -j ACCEPT
+#>	iptables -A INPUT -i $WAN_IF -p udp --sport 67 --dport 68 -m state --state ESTABLISHED,RELATED -j ACCEPT
 #>	iptables -A INPUT -i $WAN_IF -p udp --sport 67 --dport 68 -j ACCEPT
 
 	# cliente PING (icmp)
 	iptables -A OUTPUT -p icmp -j ACCEPT
-	iptables -A INPUT -p icmp -m state --state ESTABLISHED,RELATED -j ACCEPT
+#>	iptables -A INPUT -p icmp -m state --state ESTABLISHED,RELATED -j ACCEPT
 #>	iptables -A INPUT -p icmp -j ACCEPT
 
 	# Cliente DNS
 	iptables -A OUTPUT -p udp --dport 53 -j ACCEPT
-	iptables -A INPUT -p udp --sport 53  -m state --state ESTABLISHED,RELATED -j ACCEPT
+	iptables -A OUTPUT -p tcp --dport 53 -j ACCEPT
+#>	iptables -A INPUT -p udp --sport 53  -m state --state ESTABLISHED,RELATED -j ACCEPT
 #>	iptables -A INPUT -p udp --sport 53 -j ACCEPT
 
 	# Cliente HTTP
 	iptables -A OUTPUT -p tcp --dport 80 -j ACCEPT
-	iptables -A INPUT -p tcp --sport 80  -m state --state ESTABLISHED,RELATED -j ACCEPT
+#>	iptables -A INPUT -p tcp --sport 80  -m state --state ESTABLISHED,RELATED -j ACCEPT
 #>	iptables -A INPUT -i $WAN_IF -p tcp --sport 80 -j ACCEPT
 
 	# Cliente HTTPS
 	iptables -A OUTPUT -p tcp --dport 443 -j ACCEPT
-	iptables -A INPUT -p tcp --sport 443  -m state --state ESTABLISHED,RELATED -j ACCEPT
+#>	iptables -A INPUT -p tcp --sport 443  -m state --state ESTABLISHED,RELATED -j ACCEPT
 #>	iptables -A INPUT -i $WAN_IF -p tcp --sport 443 -j ACCEPT
 	
 	# Cliente SSH
 	iptables -A OUTPUT -p tcp --dport 22 -j ACCEPT
-	iptables -A INPUT -p tcp --sport 22  -m state --state ESTABLISHED,RELATED -j ACCEPT
+#>	iptables -A INPUT -p tcp --sport 22  -m state --state ESTABLISHED,RELATED -j ACCEPT
 
-#>	iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+	iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
 
 # Firewall como router
 	#Clientes DNS desde la DMZ a la WAN
@@ -126,6 +127,12 @@ case $1 in
 	iptables -A FORWARD -p icmp -j ACCEPT
 	iptables -t nat -A POSTROUTING -o $WAN_IF -p icmp  -j SNAT --to $WAN_IP
 
+	# Cambio de zona exclavo-SRI
+	iptables -A FORWARD -i $WAN_IF -o $DMZ_IF -d 172.20.106.22 -p udp --dport 53 -j ACCEPT
+	iptables -A FORWARD -i $WAN_IF -o $DMZ_IF -d 172.20.106.22 -p tcp --dport 53 -j ACCEPT
+	iptables -t nat -A PREROUTING -i $WAN_IF -p udp --dport 53 -j DNAT --to 172.20.106.22
+	iptables -t nat -A PREROUTING -i $WAN_IF -p tcp --dport 53 -j DNAT --to 172.20.106.22
+	
 
 	# Se permiten el FORWARD de todas las respuestas a peticiones hechas
  	iptables -A FORWARD -m state --state ESTABLISHED,RELATED -j ACCEPT
